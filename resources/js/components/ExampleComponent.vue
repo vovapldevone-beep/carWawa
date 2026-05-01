@@ -8,10 +8,11 @@ const center = ref({ lat: 52.2297, lng: 21.0122 })
 const radius = ref(1000)
 const address = ref('')
 const zones = ref([])
+const hoveredZoneId = ref(null)
 
 const circleRef = ref(null)
 
-const selectedPoint = ref(null)
+//const selectedPoint = ref(null)
 
 // отримати координати
 const geocode = async () => {
@@ -59,7 +60,7 @@ const handleMapClick = async (event) => {
   const lat = event.latLng.lat()
   const lng = event.latLng.lng()
 
-//   center.value = { lat, lng }
+   center.value = { lat, lng }
 
   await getAddressFromCoords(lat, lng)
 }
@@ -85,6 +86,32 @@ const loadZones = async () => {
   zones.value = await res.json()
 }
 
+const getZoneCircleOptions = (zone) => {
+  const isHovered = hoveredZoneId.value === zone.id
+
+  return {
+    center: { lat: Number(zone.lat), lng: Number(zone.lng) },
+    radius: Number(zone.radius),
+    clickable: true,
+    draggable: false,
+    editable: false,
+    zIndex: 0,
+    strokeColor: isHovered ? '#008000' : '#4285F4',
+    fillColor: isHovered ? '#008000' : '#4285F4',
+    strokeOpacity: isHovered ? 0.9 : 0.6,
+    fillOpacity: isHovered ? 0.35 : 0.2,
+    strokeWeight: isHovered ? 3 : 2
+  }
+}
+
+const handleZoneMouseOver = (zoneId) => {
+  hoveredZoneId.value = zoneId
+}
+
+const handleZoneMouseOut = () => {
+  hoveredZoneId.value = null
+}
+
 onMounted(loadZones)
 </script>
 
@@ -99,11 +126,15 @@ onMounted(loadZones)
     <GoogleMap :api-key="apiKey" style="width:100%;height:100%" :center="center" :zoom="12" @click="handleMapClick">
       
       <!-- Поточна зона -->
-      <Marker v-if="selectedPoint" :options="{ position: center }" />
+      <Marker :options="{ position: center }" />
       <Circle :options="{ 
         center, 
         radius, 
-        
+        strokeColor: '#4285F4',
+        fillColor: '#4285F4',
+        strokeOpacity: 0.6,
+        fillOpacity: 0.2,
+        strokeWeight: 2,
         clickable: false,
         draggable: false,
         editable: false,
@@ -113,10 +144,11 @@ onMounted(loadZones)
       <!-- Збережені -->
       <div v-for="zone in zones" :key="zone.id">
         <Marker :options="{ position: { lat: Number(zone.lat), lng: Number(zone.lng) } }" />
-        <Circle :options="{ center: { lat: Number(zone.lat), lng: Number(zone.lng) }, radius: zone.radius, clickable: false,
-        draggable: false,
-        editable: false,
-        zIndex: 0 }" />
+        <Circle
+          :options="getZoneCircleOptions(zone)"
+          @mouseover="handleZoneMouseOver(zone.id)"
+          @mouseout="handleZoneMouseOut"
+        />
       </div>
 
     </GoogleMap>
