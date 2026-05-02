@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { GoogleMap, Marker, Circle } from 'vue3-google-map'
+import MapSavedZones from './MapSavedZones.vue'
 
 const apiKey = "AIzaSyCZ_qe1aRHfN0-tijNv8sB3J7ti-jEFtGw"
 
@@ -8,9 +9,6 @@ const center = ref({ lat: 52.2297, lng: 21.0122 })
 const radius = ref(1000)
 const address = ref('')
 const zones = ref([])
-const hoveredZoneId = ref(null)
-
-const circleRef = ref(null)
 
 //const selectedPoint = ref(null)
 
@@ -86,32 +84,6 @@ const loadZones = async () => {
   zones.value = await res.json()
 }
 
-const getZoneCircleOptions = (zone) => {
-  const isHovered = hoveredZoneId.value === zone.id
-
-  return {
-    center: { lat: Number(zone.lat), lng: Number(zone.lng) },
-    radius: Number(zone.radius),
-    clickable: true,
-    draggable: false,
-    editable: false,
-    zIndex: 0,
-    strokeColor: isHovered ? '#008000' : '#4285F4',
-    fillColor: isHovered ? '#008000' : '#4285F4',
-    strokeOpacity: isHovered ? 0.9 : 0.6,
-    fillOpacity: isHovered ? 0.35 : 0.2,
-    strokeWeight: isHovered ? 3 : 2
-  }
-}
-
-const handleZoneMouseOver = (zoneId) => {
-  hoveredZoneId.value = zoneId
-}
-
-const handleZoneMouseOut = () => {
-  hoveredZoneId.value = null
-}
-
 onMounted(loadZones)
 </script>
 
@@ -141,15 +113,7 @@ onMounted(loadZones)
         zIndex: 0 }"
     />
 
-      <!-- Збережені -->
-      <div v-for="zone in zones" :key="zone.id">
-        <Marker :options="{ position: { lat: Number(zone.lat), lng: Number(zone.lng) } }" />
-        <Circle
-          :options="getZoneCircleOptions(zone)"
-          @mouseover="handleZoneMouseOver(zone.id)"
-          @mouseout="handleZoneMouseOut"
-        />
-      </div>
+      <MapSavedZones :zones="zones" />
 
     </GoogleMap>
   </div>
