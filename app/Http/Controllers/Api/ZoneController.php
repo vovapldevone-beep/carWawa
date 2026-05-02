@@ -13,6 +13,11 @@ class ZoneController extends Controller
         return response()->json(Zone::all());
     }
 
+    public function show(Zone $zone)
+    {
+        return response()->json($zone);
+    }
+
     public function store(Request $request)
     {
         $zone = Zone::create([

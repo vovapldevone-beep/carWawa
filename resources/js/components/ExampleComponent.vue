@@ -1,7 +1,8 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { GoogleMap, Marker, Circle } from 'vue3-google-map'
 import MapSavedZones from './MapSavedZones.vue'
+import ZoneInfoPanel from './ZoneInfoPanel.vue'
 
 const apiKey = "AIzaSyCZ_qe1aRHfN0-tijNv8sB3J7ti-jEFtGw"
 
@@ -9,6 +10,13 @@ const center = ref({ lat: 52.2297, lng: 21.0122 })
 const radius = ref(1000)
 const address = ref('')
 const zones = ref([])
+
+const selectedZoneId = ref(null)
+const panelZone = ref(null)
+const panelLoading = ref(false)
+const panelError = ref(null)
+
+const panelVisible = computed(() => selectedZoneId.value !== null)
 
 //const selectedPoint = ref(null)
 
@@ -25,7 +33,7 @@ const geocode = async () => {
 // зберегти
 const saveZone = async () => {
   try {
-    const res = await fetch('http://127.0.0.1:8000/api/zones', {
+    const res = await fetch('/api/zones', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -80,41 +88,117 @@ const getAddressFromCoords = async (lat, lng) => {
 
 // отримати всі зони
 const loadZones = async () => {
-  const res = await fetch('http://127.0.0.1:8000/api/zones')
+  const res = await fetch('/api/zones')
   zones.value = await res.json()
+}
+
+const closeZonePanel = () => {
+  selectedZoneId.value = null
+  panelZone.value = null
+  panelError.value = null
+  panelLoading.value = false
+}
+
+const onSavedZoneSelect = async (zoneId) => {
+  selectedZoneId.value = zoneId
+  panelError.value = null
+  panelLoading.value = true
+  panelZone.value = null
+
+  const fromList = zones.value.find((z) => Number(z.id) === Number(zoneId))
+  const hasAddress =
+    fromList &&
+    typeof fromList.address === 'string' &&
+    fromList.address.trim() !== ''
+  const hasRadius = fromList != null && fromList.radius != null && fromList.radius !== ''
+
+  if (fromList && hasAddress && hasRadius) {
+    panelZone.value = { ...fromList }
+    panelLoading.value = false
+    return
+  }
+
+  try {
+    const res = await fetch(`/api/zones/${zoneId}`)
+    if (!res.ok) {
+      throw new Error('fetch failed')
+    }
+    panelZone.value = await res.json()
+  } catch {
+    panelError.value = 'Не вдалося завантажити дані зони'
+    panelZone.value = null
+  } finally {
+    panelLoading.value = false
+  }
 }
 
 onMounted(loadZones)
 </script>
 
 <template>
-  <div>
-    <input v-model="address" placeholder="Адреса" />
-    <button @click="geocode">Знайти</button>
-    <button @click="saveZone">Зберегти</button>
+  <div class="map-layout">
+    <div class="map-layout__main">
+      <input v-model="address" placeholder="Адреса" />
+      <button @click="geocode">Знайти</button>
+      <button @click="saveZone">Зберегти</button>
 
-    <input type="range" min="100" max="10000" v-model.number="radius" />
+      <input type="range" min="100" max="10000" v-model.number="radius" />
 
-    <GoogleMap :api-key="apiKey" style="width:100%;height:100%" :center="center" :zoom="12" @click="handleMapClick">
-      
-      <!-- Поточна зона -->
-      <Marker :options="{ position: center }" />
-      <Circle :options="{ 
-        center, 
-        radius, 
-        strokeColor: '#4285F4',
-        fillColor: '#4285F4',
-        strokeOpacity: 0.6,
-        fillOpacity: 0.2,
-        strokeWeight: 2,
-        clickable: false,
-        draggable: false,
-        editable: false,
-        zIndex: 0 }"
+      <GoogleMap
+        :api-key="apiKey"
+        class="map-layout__map"
+        style="width:100%;height:100%"
+        :center="center"
+        :zoom="12"
+        @click="handleMapClick"
+      >
+        <!-- Поточна зона -->
+        <Marker :options="{ position: center }" />
+        <Circle :options="{ 
+          center, 
+          radius, 
+          strokeColor: '#4285F4',
+          fillColor: '#4285F4',
+          strokeOpacity: 0.6,
+          fillOpacity: 0.2,
+          strokeWeight: 2,
+          clickable: false,
+          draggable: false,
+          editable: false,
+          zIndex: 0 }"
+        />
+
+        <MapSavedZones :zones="zones" @select="onSavedZoneSelect" />
+      </GoogleMap>
+    </div>
+
+    <ZoneInfoPanel
+      :visible="panelVisible"
+      :zone="panelZone"
+      :loading="panelLoading"
+      :error-message="panelError"
+      @close="closeZonePanel"
     />
-
-      <MapSavedZones :zones="zones" />
-
-    </GoogleMap>
   </div>
 </template>
+
+<style scoped>
+.map-layout {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+  align-items: stretch;
+}
+
+.map-layout__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.map-layout__map {
+  flex: 1;
+  min-height: 320px;
+}
+</style>

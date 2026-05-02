@@ -12,7 +12,9 @@ defineProps({
 const hoveredZoneId = ref(null)
 
 const getZoneCircleOptions = (zone) => {
-  const isHovered = hoveredZoneId.value === zone.id
+  const isHovered =
+    hoveredZoneId.value !== null &&
+    Number(hoveredZoneId.value) === Number(zone.id)
 
   return {
     center: { lat: Number(zone.lat), lng: Number(zone.lng) },
@@ -30,11 +32,23 @@ const getZoneCircleOptions = (zone) => {
 }
 
 const handleZoneMouseOver = (zoneId) => {
-  hoveredZoneId.value = zoneId
+  hoveredZoneId.value = Number(zoneId)
 }
 
 const handleZoneMouseOut = () => {
   hoveredZoneId.value = null
+}
+
+const emit = defineEmits(['select'])
+
+const handleZoneClick = (zone, event) => {
+  if (typeof event?.stop === 'function') {
+    event.stop()
+  }
+  if (Number(hoveredZoneId.value) !== Number(zone.id)) {
+    return
+  }
+  emit('select', zone.id)
 }
 </script>
 
@@ -45,6 +59,7 @@ const handleZoneMouseOut = () => {
       :options="getZoneCircleOptions(zone)"
       @mouseover="handleZoneMouseOver(zone.id)"
       @mouseout="handleZoneMouseOut"
+      @click="handleZoneClick(zone, $event)"
     />
   </template>
 </template>
