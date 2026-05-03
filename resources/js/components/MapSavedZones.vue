@@ -2,19 +2,28 @@
 import { ref } from 'vue'
 import { Marker, Circle } from 'vue3-google-map'
 
-defineProps({
+const props = defineProps({
   zones: {
     type: Array,
     required: true,
+  },
+  selectedZoneId: {
+    type: [Number, String],
+    default: null,
   },
 })
 
 const hoveredZoneId = ref(null)
 
 const getZoneCircleOptions = (zone) => {
+  const isSelected =
+    props.selectedZoneId !== null &&
+    Number(props.selectedZoneId) === Number(zone.id)
   const isHovered =
     hoveredZoneId.value !== null &&
     Number(hoveredZoneId.value) === Number(zone.id)
+
+  const color = isSelected ? '#990000' : isHovered ? '#008000' : '#4285F4'
 
   return {
     center: { lat: Number(zone.lat), lng: Number(zone.lng) },
@@ -23,11 +32,11 @@ const getZoneCircleOptions = (zone) => {
     draggable: false,
     editable: false,
     zIndex: 0,
-    strokeColor: isHovered ? '#008000' : '#4285F4',
-    fillColor: isHovered ? '#008000' : '#4285F4',
-    strokeOpacity: isHovered ? 0.9 : 0.6,
-    fillOpacity: isHovered ? 0.35 : 0.2,
-    strokeWeight: isHovered ? 3 : 2,
+    strokeColor: color,
+    fillColor: color,
+    strokeOpacity: isSelected ? 0.95 : isHovered ? 0.9 : 0.6,
+    fillOpacity: isSelected ? 0.35 : isHovered ? 0.35 : 0.2,
+    strokeWeight: isSelected ? 4 : isHovered ? 3 : 2,
   }
 }
 

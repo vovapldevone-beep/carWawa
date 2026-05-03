@@ -19,6 +19,21 @@ defineProps({
 })
 
 const emit = defineEmits(['close'])
+
+const displayText = (value) => {
+  if (value === null || value === undefined) {
+    return ''
+  }
+  return String(value).trim()
+}
+
+const siteHref = (site) => {
+  const s = displayText(site)
+  if (!s) {
+    return '#'
+  }
+  return /^https?:\/\//i.test(s) ? s : `https://${s}`
+}
 </script>
 
 <template>
@@ -46,8 +61,23 @@ const emit = defineEmits(['close'])
       {{ errorMessage }}
     </div>
     <dl v-else-if="zone" class="zone-info-panel__dl">
+      <dt>Назва</dt>
+      <dd>{{ displayText(zone.name) || '—' }}</dd>
+      <dt>Номер</dt>
+      <dd>{{ displayText(zone.number) || '—' }}</dd>
+      <dt>Сайт</dt>
+      <dd>
+        <a
+          v-if="displayText(zone.site)"
+          class="zone-info-panel__link"
+          :href="siteHref(zone.site)"
+          target="_blank"
+          rel="noopener noreferrer"
+        >{{ displayText(zone.site) }}</a>
+        <span v-else>—</span>
+      </dd>
       <dt>Адреса</dt>
-      <dd>{{ zone.address?.trim() ? zone.address : '—' }}</dd>
+      <dd>{{ displayText(zone.address) || '—' }}</dd>
       <dt>Радіус</dt>
       <dd>{{ zone.radius }} м</dd>
     </dl>
@@ -120,5 +150,14 @@ const emit = defineEmits(['close'])
   margin: 0.35rem 0 0;
   font-size: 1rem;
   color: #111;
+}
+
+.zone-info-panel__link {
+  color: #1565c0;
+  word-break: break-all;
+}
+
+.zone-info-panel__link:hover {
+  text-decoration: underline;
 }
 </style>

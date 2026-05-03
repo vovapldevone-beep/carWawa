@@ -21,6 +21,9 @@ class ZoneController extends Controller
     public function store(Request $request)
     {
         $zone = Zone::create([
+            'name' => $request->name,
+            'number' => $request->number,
+            'site' => $request->site,
             'address' => $request->address,
             'lat' => $request->lat,
             'lng' => $request->lng,

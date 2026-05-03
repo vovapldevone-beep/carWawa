@@ -157,8 +157,8 @@ onMounted(loadZones)
         <Circle :options="{ 
           center, 
           radius, 
-          strokeColor: '#4285F4',
-          fillColor: '#4285F4',
+          strokeColor: '#ff9933',
+          fillColor: '#ff9933',
           strokeOpacity: 0.6,
           fillOpacity: 0.2,
           strokeWeight: 2,
@@ -168,7 +168,11 @@ onMounted(loadZones)
           zIndex: 0 }"
         />
 
-        <MapSavedZones :zones="zones" @select="onSavedZoneSelect" />
+        <MapSavedZones
+          :zones="zones"
+          :selected-zone-id="selectedZoneId"
+          @select="onSavedZoneSelect"
+        />
       </GoogleMap>
     </div>
 

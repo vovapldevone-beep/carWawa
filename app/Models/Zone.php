@@ -6,5 +6,5 @@ use Illuminate\Database\Eloquent\Model;
 
 class Zone extends Model
 {
-    protected $fillable = ['address', 'lat', 'lng', 'radius'];
+    protected $fillable = ['name', 'number', 'site', 'address', 'lat', 'lng', 'radius'];
 }
