@@ -1,8 +1,9 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { GoogleMap, Marker, Circle } from 'vue3-google-map'
 import MapSavedZones from './MapSavedZones.vue'
 import ZoneInfoPanel from './ZoneInfoPanel.vue'
+import EvacuatorFilters from './EvacuatorFilters.vue'
 
 const apiKey = "AIzaSyCZ_qe1aRHfN0-tijNv8sB3J7ti-jEFtGw"
 
@@ -10,6 +11,33 @@ const center = ref({ lat: 52.2297, lng: 21.0122 })
 const radius = ref(1000)
 const address = ref('')
 const zones = ref([])
+
+const evacuatorFilters = ref({
+  typeTow: null,
+  minLoadCapacity: null,
+})
+
+const filteredZones = computed(() => {
+  const { typeTow, minLoadCapacity } = evacuatorFilters.value
+  return zones.value.filter((z) => {
+    if (typeTow != null && typeTow !== '') {
+      if (String(z.type_tow ?? '') !== typeTow) {
+        return false
+      }
+    }
+    if (minLoadCapacity != null) {
+      const cap = z.load_capacity != null ? Number(z.load_capacity) : null
+      if (cap == null || cap < minLoadCapacity) {
+        return false
+      }
+    }
+    return true
+  })
+})
+
+const onEvacuatorFiltersUpdate = (payload) => {
+  evacuatorFilters.value = payload
+}
 
 const selectedZoneId = ref(null)
 const panelZone = ref(null)
@@ -132,12 +160,25 @@ const onSavedZoneSelect = async (zoneId) => {
   }
 }
 
+watch(filteredZones, (list) => {
+  if (selectedZoneId.value == null) {
+    return
+  }
+  const stillVisible = list.some(
+    (z) => Number(z.id) === Number(selectedZoneId.value),
+  )
+  if (!stillVisible) {
+    closeZonePanel()
+  }
+})
+
 onMounted(loadZones)
 </script>
 
 <template>
   <div class="map-layout">
     <div class="map-layout__main">
+      <EvacuatorFilters :zones="zones" @update:filters="onEvacuatorFiltersUpdate" />
       <input v-model="address" placeholder="Адреса" />
       <button @click="geocode">Знайти</button>
       <button @click="saveZone">Зберегти</button>
@@ -169,7 +210,7 @@ onMounted(loadZones)
         />
 
         <MapSavedZones
-          :zones="zones"
+          :zones="filteredZones"
           :selected-zone-id="selectedZoneId"
           @select="onSavedZoneSelect"
         />

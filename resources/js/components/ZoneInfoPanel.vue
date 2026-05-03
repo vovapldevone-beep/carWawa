@@ -80,6 +80,15 @@ const siteHref = (site) => {
       <dd>{{ displayText(zone.address) || '—' }}</dd>
       <dt>Радіус</dt>
       <dd>{{ zone.radius }} м</dd>
+      <dt>Тип евакуатора</dt>
+      <dd>{{ displayText(zone.type_tow) || '—' }}</dd>
+      <dt>Вантажопідйомність</dt>
+      <dd>
+        <template v-if="zone.load_capacity != null && zone.load_capacity !== ''">
+          {{ zone.load_capacity }} т
+        </template>
+        <template v-else>—</template>
+      </dd>
     </dl>
   </aside>
 </template>
