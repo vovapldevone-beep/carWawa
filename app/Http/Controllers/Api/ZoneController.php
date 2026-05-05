@@ -28,6 +28,8 @@ class ZoneController extends Controller
             'lat' => $request->lat,
             'lng' => $request->lng,
             'radius' => $request->radius,
+            'load_capacity' => $request->input('load_capacity'),
+            'type_tow' => $request->input('type_tow'),
         ]);
 
         return response()->json($zone);

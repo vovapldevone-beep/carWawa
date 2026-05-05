@@ -80,18 +80,37 @@ const siteHref = (site) => {
       <dd>{{ displayText(zone.address) || '—' }}</dd>
       <dt>Радіус</dt>
       <dd>{{ zone.radius }} м</dd>
+      <dt>Тип евакуатора</dt>
+      <dd>{{ displayText(zone.type_tow) || '—' }}</dd>
+      <dt>Вантажопідйомність</dt>
+      <dd>
+        <template v-if="zone.load_capacity != null && zone.load_capacity !== ''">
+          {{ zone.load_capacity }} т
+        </template>
+        <template v-else>—</template>
+      </dd>
     </dl>
   </aside>
 </template>
 
 <style scoped>
 .zone-info-panel {
-  width: min(320px, 100%);
-  flex-shrink: 0;
-  border-left: 1px solid #e0e0e0;
-  background: #fafafa;
-  padding: 1rem;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 100;
+  width: min(320px, calc(100% - 24px));
+  max-height: calc(100% - 24px);
   overflow: auto;
+  padding: 1rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow:
+    0 10px 40px -10px rgb(15 23 42 / 0.25),
+    0 4px 12px -4px rgb(15 23 42 / 0.12);
+  pointer-events: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .zone-info-panel__header {

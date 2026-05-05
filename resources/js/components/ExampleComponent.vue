@@ -1,15 +1,46 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { GoogleMap, Marker, Circle } from 'vue3-google-map'
 import MapSavedZones from './MapSavedZones.vue'
 import ZoneInfoPanel from './ZoneInfoPanel.vue'
+import EvacuatorFilters from './EvacuatorFilters.vue'
 
-const apiKey = "AIzaSyCZ_qe1aRHfN0-tijNv8sB3J7ti-jEFtGw"
+const apiKey = 'AIzaSyCZ_qe1aRHfN0-tijNv8sB3J7ti-jEFtGw'
 
 const center = ref({ lat: 52.2297, lng: 21.0122 })
-const radius = ref(1000)
+const searchRadiusKm = ref(1)
+const radiusMeters = computed(() =>
+  Math.min(50_000, Math.max(1_000, Math.round(searchRadiusKm.value * 1000))),
+)
 const address = ref('')
 const zones = ref([])
+
+const evacuatorFilters = ref({
+  typeTow: null,
+  minLoadCapacity: null,
+})
+
+const filteredZones = computed(() => {
+  const { typeTow, minLoadCapacity } = evacuatorFilters.value
+  return zones.value.filter((z) => {
+    if (typeTow != null && typeTow !== '') {
+      if (String(z.type_tow ?? '') !== typeTow) {
+        return false
+      }
+    }
+    if (minLoadCapacity != null) {
+      const cap = z.load_capacity != null ? Number(z.load_capacity) : null
+      if (cap == null || cap < minLoadCapacity) {
+        return false
+      }
+    }
+    return true
+  })
+})
+
+const onEvacuatorFiltersUpdate = (payload) => {
+  evacuatorFilters.value = payload
+}
 
 const selectedZoneId = ref(null)
 const panelZone = ref(null)
@@ -18,11 +49,10 @@ const panelError = ref(null)
 
 const panelVisible = computed(() => selectedZoneId.value !== null)
 
-//const selectedPoint = ref(null)
-
-// отримати координати
 const geocode = async () => {
-  const res = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${address.value}&key=${apiKey}`)
+  const res = await fetch(
+    `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address.value)}&key=${apiKey}`,
+  )
   const data = await res.json()
 
   if (data.results.length) {
@@ -30,7 +60,6 @@ const geocode = async () => {
   }
 }
 
-// зберегти
 const saveZone = async () => {
   try {
     const res = await fetch('/api/zones', {
@@ -40,40 +69,40 @@ const saveZone = async () => {
         address: address.value,
         lat: center.value.lat,
         lng: center.value.lng,
-        radius: radius.value
-      })
+        radius: radiusMeters.value,
+        type_tow: evacuatorFilters.value.typeTow,
+        load_capacity: evacuatorFilters.value.minLoadCapacity,
+      }),
     })
 
     await loadZones()
 
     const data = await res.json()
 
-    console.log('STATUS:', res.status)
-    console.log('RESPONSE:', data)
-
     if (!res.ok) {
       alert('Помилка при збереженні')
+      return
     }
 
+    console.log('STATUS:', res.status)
+    console.log('RESPONSE:', data)
   } catch (err) {
     console.error('ERROR:', err)
   }
 }
 
-
-
 const handleMapClick = async (event) => {
   const lat = event.latLng.lat()
   const lng = event.latLng.lng()
 
-   center.value = { lat, lng }
+  center.value = { lat, lng }
 
   await getAddressFromCoords(lat, lng)
 }
 
 const getAddressFromCoords = async (lat, lng) => {
   const res = await fetch(
-    `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`
+    `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`,
   )
 
   const data = await res.json()
@@ -83,10 +112,8 @@ const getAddressFromCoords = async (lat, lng) => {
   } else {
     address.value = ''
   }
-  console.log(address.value)
 }
 
-// отримати всі зони
 const loadZones = async () => {
   const res = await fetch('/api/zones')
   zones.value = await res.json()
@@ -132,77 +159,150 @@ const onSavedZoneSelect = async (zoneId) => {
   }
 }
 
+watch(filteredZones, (list) => {
+  if (selectedZoneId.value == null) {
+    return
+  }
+  const stillVisible = list.some(
+    (z) => Number(z.id) === Number(selectedZoneId.value),
+  )
+  if (!stillVisible) {
+    closeZonePanel()
+  }
+})
+
 onMounted(loadZones)
 </script>
 
 <template>
   <div class="map-layout">
-    <div class="map-layout__main">
-      <input v-model="address" placeholder="Адреса" />
-      <button @click="geocode">Знайти</button>
-      <button @click="saveZone">Зберегти</button>
+    <aside class="map-layout__sidebar" aria-label="Фільтри">
+      <div class="map-layout__filter-card">
+        <EvacuatorFilters
+          v-model:address="address"
+          v-model:radius-km="searchRadiusKm"
+          :filtered-count="filteredZones.length"
+          @update:filters="onEvacuatorFiltersUpdate"
+          @geocode="geocode"
+          @save-zone="saveZone"
+          @show-results="geocode"
+        />
+      </div>
+    </aside>
 
-      <input type="range" min="100" max="10000" v-model.number="radius" />
-
+    <div class="map-layout__map-area">
       <GoogleMap
         :api-key="apiKey"
         class="map-layout__map"
-        style="width:100%;height:100%"
+        style="width: 100%; height: 100%"
         :center="center"
         :zoom="12"
         @click="handleMapClick"
       >
-        <!-- Поточна зона -->
         <Marker :options="{ position: center }" />
-        <Circle :options="{ 
-          center, 
-          radius, 
-          strokeColor: '#ff9933',
-          fillColor: '#ff9933',
-          strokeOpacity: 0.6,
-          fillOpacity: 0.2,
-          strokeWeight: 2,
-          clickable: false,
-          draggable: false,
-          editable: false,
-          zIndex: 0 }"
+        <Circle
+          :options="{
+            center,
+            radius: radiusMeters,
+            strokeColor: '#ff9933',
+            fillColor: '#ff9933',
+            strokeOpacity: 0.6,
+            fillOpacity: 0.2,
+            strokeWeight: 2,
+            clickable: false,
+            draggable: false,
+            editable: false,
+            zIndex: 0,
+          }"
         />
 
         <MapSavedZones
-          :zones="zones"
+          :zones="filteredZones"
           :selected-zone-id="selectedZoneId"
           @select="onSavedZoneSelect"
         />
       </GoogleMap>
-    </div>
 
-    <ZoneInfoPanel
-      :visible="panelVisible"
-      :zone="panelZone"
-      :loading="panelLoading"
-      :error-message="panelError"
-      @close="closeZonePanel"
-    />
+      <ZoneInfoPanel
+        :visible="panelVisible"
+        :zone="panelZone"
+        :loading="panelLoading"
+        :error-message="panelError"
+        @close="closeZonePanel"
+      />
+    </div>
   </div>
 </template>
 
 <style scoped>
 .map-layout {
   display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 12px;
+  box-sizing: border-box;
   width: 100%;
   min-height: 100vh;
-  align-items: stretch;
+  padding: 12px;
+  background: #f1f5f9;
 }
 
-.map-layout__main {
+.map-layout__sidebar {
+  width: min(26rem, 100%);
+  flex-shrink: 0;
+  overflow-y: auto;
+  align-self: stretch;
+}
+
+.map-layout__filter-card {
+  height: 100%;
+  min-height: min(100%, 100vh);
+  padding: 1.25rem;
+  background: #fff;
+  border-radius: 1rem;
+  border: 1px solid rgb(226 232 240 / 0.9);
+  box-shadow:
+    0 4px 6px -1px rgb(15 23 42 / 0.06),
+    0 2px 4px -2px rgb(15 23 42 / 0.04);
+  box-sizing: border-box;
+}
+
+.map-layout__map-area {
+  position: relative;
   flex: 1;
   min-width: 0;
+  min-height: 320px;
   display: flex;
   flex-direction: column;
+  border-radius: 1rem;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  background: #e5e7eb;
 }
 
 .map-layout__map {
   flex: 1;
   min-height: 320px;
+}
+
+@media (max-width: 768px) {
+  .map-layout {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .map-layout__sidebar {
+    width: 100%;
+    max-height: min(55vh, 28rem);
+  }
+
+  .map-layout__filter-card {
+    min-height: 0;
+  }
+
+  .map-layout__map-area {
+    min-height: 45vh;
+    flex: 1;
+  }
 }
 </style>
