@@ -3,17 +3,17 @@ import { computed, ref, watch } from 'vue'
 
 const TOW_TYPES = [
   {
-    value: 'Платформа',
+    value: '0',
     label: 'Платформа',
     icon: 'platform',
   },
   {
-    value: 'Частковий погрузник',
+    value: '1',
     label: 'Частковий погрузник',
     icon: 'partial',
   },
   {
-    value: 'Кран-маніпулятор',
+    value: '2',
     label: 'Кран-маніпулятор',
     icon: 'crane',
   },
