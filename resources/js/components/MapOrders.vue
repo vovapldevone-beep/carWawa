@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { GoogleMap, Marker } from 'vue3-google-map'
 import NawBarMenu from './NavBarMenu.vue'
+import OrderCreateForm from './OrderCreateForm.vue'
 
 const apiKey = 'AIzaSyCZ_qe1aRHfN0-tijNv8sB3J7ti-jEFtGw'
 
@@ -45,6 +46,8 @@ onMounted(() => {
     <header class="orders-map__header">
       <h1 class="orders-map__title">Orders</h1>
     </header>
+
+    <OrderCreateForm class="orders-map__form" />
 
     <div class="orders-map__map-area">
       <GoogleMap
@@ -112,6 +115,10 @@ onMounted(() => {
   box-shadow:
     0 4px 6px -1px rgb(15 23 42 / 0.06),
     0 2px 4px -2px rgb(15 23 42 / 0.04);
+}
+
+.orders-map__form {
+  flex-shrink: 0;
 }
 
 .orders-map__title {
