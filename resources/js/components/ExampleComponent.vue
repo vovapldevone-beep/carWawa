@@ -4,6 +4,7 @@ import { GoogleMap, Marker, Circle } from 'vue3-google-map'
 import MapSavedZones from './MapSavedZones.vue'
 import ZoneInfoPanel from './ZoneInfoPanel.vue'
 import EvacuatorFilters from './EvacuatorFilters.vue'
+import NawBarMenu from './NavBarMenu.vue'
 
 const apiKey = 'AIzaSyCZ_qe1aRHfN0-tijNv8sB3J7ti-jEFtGw'
 
@@ -175,9 +176,13 @@ onMounted(loadZones)
 </script>
 
 <template>
+  <NawBarMenu/>
   <div class="map-layout">
     <aside class="map-layout__sidebar" aria-label="Фільтри">
       <div class="map-layout__filter-card">
+        <!-- <nav class="map-layout__page-nav" aria-label="Навігація">
+          <a href="/orders" class="map-layout__page-link">Замовлення</a>
+        </nav> -->
         <EvacuatorFilters
           v-model:address="address"
           v-model:radius-km="searchRadiusKm"
@@ -252,6 +257,31 @@ onMounted(loadZones)
   flex-shrink: 0;
   overflow-y: auto;
   align-self: stretch;
+}
+
+.map-layout__page-nav {
+  margin-bottom: 1rem;
+}
+
+.map-layout__page-link {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #0f172a;
+  text-decoration: none;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgb(226 232 240 / 0.9);
+  background: #f8fafc;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.map-layout__page-link:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
 }
 
 .map-layout__filter-card {
