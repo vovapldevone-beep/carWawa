@@ -1,6 +1,8 @@
 <script setup>
 import { ref } from 'vue'
 
+const emit = defineEmits(['created'])
+
 const carName = ref('')
 const carNumber = ref('')
 const carWeight = ref('')
@@ -86,6 +88,7 @@ const submit = async () => {
     message.value = 'Замовлення збережено.'
     messageIsError.value = false
     resetForm()
+    emit('created')
   } catch (err) {
     const hint =
       err instanceof TypeError && err.message === 'Failed to fetch'

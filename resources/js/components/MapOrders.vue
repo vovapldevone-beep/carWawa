@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { GoogleMap, Marker } from 'vue3-google-map'
 import NawBarMenu from './NavBarMenu.vue'
 import OrderCreateForm from './OrderCreateForm.vue'
+import OrdersList from './OrdersList.vue'
 
 const apiKey = 'AIzaSyCZ_qe1aRHfN0-tijNv8sB3J7ti-jEFtGw'
 
@@ -11,11 +12,52 @@ const center = ref({ lat: 52.2297, lng: 21.0122 })
 const mapLoaded = ref(false)
 const mapLoadError = ref('')
 
+const orders = ref([])
+const ordersLoading = ref(false)
+const ordersError = ref('')
+
 const onMapIdle = () => {
   mapLoaded.value = true
 }
 
+const loadOrders = async () => {
+  ordersLoading.value = true
+  ordersError.value = ''
+  try {
+    const res = await fetch('/api/orders', {
+      headers: {
+        Accept: 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+    })
+    const raw = await res.text()
+    let data = []
+    if (raw) {
+      try {
+        data = JSON.parse(raw)
+      } catch {
+        ordersError.value = 'Не вдалося прочитати список замовлень.'
+        return
+      }
+    }
+    if (!res.ok) {
+      const body = typeof data === 'object' && data !== null ? data : {}
+      ordersError.value =
+        body.message || `Помилка завантаження (${res.status})`
+      return
+    }
+    orders.value = Array.isArray(data) ? data : []
+  } catch (err) {
+    ordersError.value =
+      err instanceof Error ? err.message : 'Не вдалося завантажити замовлення.'
+  } finally {
+    ordersLoading.value = false
+  }
+}
+
 onMounted(() => {
+  loadOrders()
+
   window.setTimeout(() => {
     if (mapLoaded.value) {
       return
@@ -37,33 +79,42 @@ onMounted(() => {
 </script>
 
 <template>
-  <NawBarMenu/>
+  <NawBarMenu />
 
   <div class="orders-map">
-    <!-- <nav class="map-layout__page-nav" aria-label="Навігація">
-      <a href="/" class="map-layout__page-link">Карта</a>
-    </nav> -->
     <header class="orders-map__header">
       <h1 class="orders-map__title">Orders</h1>
     </header>
 
-    <OrderCreateForm class="orders-map__form" />
+    <div class="orders-map__main">
+      <aside class="orders-map__sidebar" aria-label="Замовлення">
+        <OrderCreateForm class="orders-map__form" @created="loadOrders" />
 
-    <div class="orders-map__map-area">
-      <GoogleMap
-        :api-key="apiKey"
-        class="orders-map__map"
-        style="width: 100%; height: 100%"
-        :center="center"
-        :zoom="12"
-        @idle="onMapIdle"
-      >
-        <Marker :options="{ position: center }" />
-      </GoogleMap>
+        <OrdersList
+          :orders="orders"
+          :loading="ordersLoading"
+          :error="ordersError"
+        />
+      </aside>
 
-      <p v-if="mapLoadError" class="orders-map__error" role="alert">
-        {{ mapLoadError }}
-      </p>
+      <div class="orders-map__map-col">
+        <div class="orders-map__map-area">
+          <GoogleMap
+            :api-key="apiKey"
+            class="orders-map__map"
+            style="width: 100%; height: 100%"
+            :center="center"
+            :zoom="12"
+            @idle="onMapIdle"
+          >
+            <Marker :options="{ position: center }" />
+          </GoogleMap>
+
+          <p v-if="mapLoadError" class="orders-map__error" role="alert">
+            {{ mapLoadError }}
+          </p>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -93,6 +144,7 @@ onMounted(() => {
   background: #f1f5f9;
   border-color: #cbd5e1;
 }
+
 .orders-map {
   display: flex;
   flex-direction: column;
@@ -115,9 +167,6 @@ onMounted(() => {
   box-shadow:
     0 4px 6px -1px rgb(15 23 42 / 0.06),
     0 2px 4px -2px rgb(15 23 42 / 0.04);
-}
-
-.orders-map__form {
   flex-shrink: 0;
 }
 
@@ -129,10 +178,41 @@ onMounted(() => {
   color: #0f172a;
 }
 
-.orders-map__map-area {
-  height: calc(100vh - 96px);
+.orders-map__main {
+  display: flex;
+  flex: 1;
+  gap: 12px;
+  min-height: 0;
+  align-items: stretch;
+}
+
+.orders-map__sidebar {
+  width: min(380px, 100%);
+  max-width: 100%;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+
+.orders-map__form {
+  flex-shrink: 0;
+}
+
+.orders-map__map-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
   min-height: 420px;
-  display: block;
+}
+
+.orders-map__map-area {
+  flex: 1;
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
   border-radius: 1rem;
   overflow: hidden;
   border: 1px solid #e2e8f0;
@@ -141,7 +221,7 @@ onMounted(() => {
 
 .orders-map__map {
   width: 100%;
-  height: 100%;
+  flex: 1;
   min-height: 420px;
 }
 
@@ -152,5 +232,19 @@ onMounted(() => {
   color: #7f1d1d;
   background: #fef2f2;
   border-top: 1px solid #fecaca;
+}
+
+@media (max-width: 900px) {
+  .orders-map__main {
+    flex-direction: column;
+  }
+
+  .orders-map__sidebar {
+    width: 100%;
+  }
+
+  .orders-map__map-col {
+    min-height: 50vh;
+  }
 }
 </style>

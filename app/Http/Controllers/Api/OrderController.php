@@ -10,6 +10,24 @@ use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
+    public function index()
+    {
+        $orders = Order::query()
+            ->orderByDesc('id')
+            ->get([
+                'id',
+                'car_name',
+                'car_number',
+                'car_weight',
+                'car_location',
+                'loading_date',
+                'distance',
+                'status',
+            ]);
+
+        return response()->json($orders);
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
