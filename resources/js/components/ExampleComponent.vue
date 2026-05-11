@@ -1,8 +1,6 @@
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
-import { GoogleMap, Marker, Circle } from 'vue3-google-map'
-import MapSavedZones from './MapSavedZones.vue'
-import ZoneInfoPanel from './ZoneInfoPanel.vue'
+import { ref, computed, onMounted } from 'vue'
+import MapWithZonesPanel from './MapWithZonesPanel.vue'
 import EvacuatorFilters from './EvacuatorFilters.vue'
 import NawBarMenu from './NavBarMenu.vue'
 
@@ -42,13 +40,6 @@ const filteredZones = computed(() => {
 const onEvacuatorFiltersUpdate = (payload) => {
   evacuatorFilters.value = payload
 }
-
-const selectedZoneId = ref(null)
-const panelZone = ref(null)
-const panelLoading = ref(false)
-const panelError = ref(null)
-
-const panelVisible = computed(() => selectedZoneId.value !== null)
 
 const geocode = async () => {
   const res = await fetch(
@@ -92,15 +83,6 @@ const saveZone = async () => {
   }
 }
 
-const handleMapClick = async (event) => {
-  const lat = event.latLng.lat()
-  const lng = event.latLng.lng()
-
-  center.value = { lat, lng }
-
-  await getAddressFromCoords(lat, lng)
-}
-
 const getAddressFromCoords = async (lat, lng) => {
   const res = await fetch(
     `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`,
@@ -120,57 +102,9 @@ const loadZones = async () => {
   zones.value = await res.json()
 }
 
-const closeZonePanel = () => {
-  selectedZoneId.value = null
-  panelZone.value = null
-  panelError.value = null
-  panelLoading.value = false
+const onMapClick = async ({ lat, lng }) => {
+  await getAddressFromCoords(lat, lng)
 }
-
-const onSavedZoneSelect = async (zoneId) => {
-  selectedZoneId.value = zoneId
-  panelError.value = null
-  panelLoading.value = true
-  panelZone.value = null
-
-  const fromList = zones.value.find((z) => Number(z.id) === Number(zoneId))
-  const hasAddress =
-    fromList &&
-    typeof fromList.address === 'string' &&
-    fromList.address.trim() !== ''
-  const hasRadius = fromList != null && fromList.radius != null && fromList.radius !== ''
-
-  if (fromList && hasAddress && hasRadius) {
-    panelZone.value = { ...fromList }
-    panelLoading.value = false
-    return
-  }
-
-  try {
-    const res = await fetch(`/api/zones/${zoneId}`)
-    if (!res.ok) {
-      throw new Error('fetch failed')
-    }
-    panelZone.value = await res.json()
-  } catch {
-    panelError.value = 'Не вдалося завантажити дані зони'
-    panelZone.value = null
-  } finally {
-    panelLoading.value = false
-  }
-}
-
-watch(filteredZones, (list) => {
-  if (selectedZoneId.value == null) {
-    return
-  }
-  const stillVisible = list.some(
-    (z) => Number(z.id) === Number(selectedZoneId.value),
-  )
-  if (!stillVisible) {
-    closeZonePanel()
-  }
-})
 
 onMounted(loadZones)
 </script>
@@ -196,44 +130,12 @@ onMounted(loadZones)
     </aside>
 
     <div class="map-layout__map-area">
-      <GoogleMap
+      <MapWithZonesPanel
+        v-model:center="center"
         :api-key="apiKey"
-        class="map-layout__map"
-        style="width: 100%; height: 100%"
-        :center="center"
-        :zoom="12"
-        @click="handleMapClick"
-      >
-        <Marker :options="{ position: center }" />
-        <Circle
-          :options="{
-            center,
-            radius: radiusMeters,
-            strokeColor: '#ff9933',
-            fillColor: '#ff9933',
-            strokeOpacity: 0.6,
-            fillOpacity: 0.2,
-            strokeWeight: 2,
-            clickable: false,
-            draggable: false,
-            editable: false,
-            zIndex: 0,
-          }"
-        />
-
-        <MapSavedZones
-          :zones="filteredZones"
-          :selected-zone-id="selectedZoneId"
-          @select="onSavedZoneSelect"
-        />
-      </GoogleMap>
-
-      <ZoneInfoPanel
-        :visible="panelVisible"
-        :zone="panelZone"
-        :loading="panelLoading"
-        :error-message="panelError"
-        @close="closeZonePanel"
+        :zones="filteredZones"
+        :radius-meters="radiusMeters"
+        @map-click="onMapClick"
       />
     </div>
   </div>
@@ -308,11 +210,6 @@ onMounted(loadZones)
   overflow: hidden;
   border: 1px solid #e2e8f0;
   background: #e5e7eb;
-}
-
-.map-layout__map {
-  flex: 1;
-  min-height: 320px;
 }
 
 @media (max-width: 768px) {
