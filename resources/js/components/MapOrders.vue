@@ -1,13 +1,18 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { GoogleMap, Marker } from 'vue3-google-map'
 import NawBarMenu from './NavBarMenu.vue'
 import OrderCreateForm from './OrderCreateForm.vue'
 import OrdersList from './OrdersList.vue'
+import MapWithZonesPanel from './MapWithZonesPanel.vue'
 
 const apiKey = 'AIzaSyCZ_qe1aRHfN0-tijNv8sB3J7ti-jEFtGw'
 
+const ORDER_MAP_RADIUS_M = 1_000
+
 const center = ref({ lat: 52.2297, lng: 21.0122 })
+const carLocation = ref('')
+const showSavedZones = ref(true)
+const zones = ref([])
 
 const mapLoaded = ref(false)
 const mapLoadError = ref('')
@@ -18,6 +23,15 @@ const ordersError = ref('')
 
 const onMapIdle = () => {
   mapLoaded.value = true
+}
+
+const loadZones = async () => {
+  try {
+    const res = await fetch('/api/zones')
+    zones.value = await res.json()
+  } catch {
+    zones.value = []
+  }
 }
 
 const loadOrders = async () => {
@@ -55,8 +69,25 @@ const loadOrders = async () => {
   }
 }
 
+const onMapPanelClick = async ({ lat, lng }) => {
+  try {
+    const res = await fetch(
+      `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`,
+    )
+    const data = await res.json()
+    if (data.results?.length) {
+      carLocation.value = data.results[0].formatted_address
+    } else {
+      carLocation.value = `${lat}, ${lng}`
+    }
+  } catch {
+    carLocation.value = `${lat}, ${lng}`
+  }
+}
+
 onMounted(() => {
   loadOrders()
+  loadZones()
 
   window.setTimeout(() => {
     if (mapLoaded.value) {
@@ -88,7 +119,14 @@ onMounted(() => {
 
     <div class="orders-map__main">
       <aside class="orders-map__sidebar" aria-label="Замовлення">
-        <OrderCreateForm class="orders-map__form" @created="loadOrders" />
+        <OrderCreateForm
+          class="orders-map__form"
+          v-model:center="center"
+          v-model:car-location="carLocation"
+          v-model:show-saved-zones="showSavedZones"
+          :api-key="apiKey"
+          @created="loadOrders"
+        />
 
         <OrdersList
           :orders="orders"
@@ -99,16 +137,16 @@ onMounted(() => {
 
       <div class="orders-map__map-col">
         <div class="orders-map__map-area">
-          <GoogleMap
-            :api-key="apiKey"
+          <MapWithZonesPanel
             class="orders-map__map"
-            style="width: 100%; height: 100%"
-            :center="center"
-            :zoom="12"
+            v-model:center="center"
+            :api-key="apiKey"
+            :zones="zones"
+            :radius-meters="ORDER_MAP_RADIUS_M"
+            :show-saved-zones="showSavedZones"
             @idle="onMapIdle"
-          >
-            <Marker :options="{ position: center }" />
-          </GoogleMap>
+            @map-click="onMapPanelClick"
+          />
 
           <p v-if="mapLoadError" class="orders-map__error" role="alert">
             {{ mapLoadError }}

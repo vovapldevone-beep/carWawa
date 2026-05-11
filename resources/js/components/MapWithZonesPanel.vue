@@ -29,6 +29,10 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  showSavedZones: {
+    type: Boolean,
+    default: true,
+  },
 })
 
 const center = defineModel('center', {
@@ -41,6 +45,7 @@ const emit = defineEmits({
     payload != null &&
     typeof payload.lat === 'number' &&
     typeof payload.lng === 'number',
+  idle: () => true,
 })
 
 const selectedZoneId = ref(null)
@@ -113,6 +118,15 @@ watch(
   },
   { deep: true },
 )
+
+watch(
+  () => props.showSavedZones,
+  (visible) => {
+    if (!visible) {
+      closeZonePanel()
+    }
+  },
+)
 </script>
 
 <template>
@@ -124,6 +138,7 @@ watch(
       :center="center"
       :zoom="zoom"
       @click="handleMapClick"
+      @idle="emit('idle')"
     >
       <Marker
         v-if="showCenterMarker"
@@ -147,6 +162,7 @@ watch(
       />
 
       <MapSavedZones
+        v-if="showSavedZones"
         :zones="zones"
         :selected-zone-id="selectedZoneId"
         @select="onSavedZoneSelect"
