@@ -8,7 +8,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close', 'saved'])
 
 const carName = ref('')
 const carNumber = ref('')
@@ -53,6 +53,114 @@ watch(
   },
   { immediate: true, deep: true },
 )
+
+const submitting = ref(false)
+const message = ref('')
+const messageIsError = ref(false)
+
+const parseResponsePayload = async (res) => {
+  const raw = await res.text()
+  if (!raw) {
+    return {}
+  }
+  try {
+    return JSON.parse(raw)
+  } catch {
+    return { _raw: raw.slice(0, 500) }
+  }
+}
+
+const buildPayload = () => {
+  const payload = {
+    car_name: carName.value.trim(),
+    car_number: carNumber.value.trim(),
+    car_location: carLocation.value.trim(),
+    status: status.value.trim() === '' ? null : status.value.trim(),
+  }
+
+  const w = String(carWeight.value ?? '').trim()
+  if (w === '') {
+    payload.car_weight = null
+  } else {
+    const n = Number(w)
+    payload.car_weight = Number.isFinite(n) ? n : null
+  }
+
+  if (loadingDate.value) {
+    payload.loading_date = loadingDate.value.includes('T')
+      ? loadingDate.value.replace('T', ' ')
+      : loadingDate.value
+  } else {
+    payload.loading_date = null
+  }
+
+  const d = String(distance.value ?? '').trim()
+  if (d === '') {
+    payload.distance = null
+  } else {
+    const n = Number(d)
+    payload.distance = Number.isFinite(n) ? n : null
+  }
+
+  return payload
+}
+
+const submit = async () => {
+  message.value = ''
+  submitting.value = true
+
+  const id = props.order?.id
+  if (id == null) {
+    message.value = 'Немає ідентифікатора замовлення.'
+    messageIsError.value = true
+    submitting.value = false
+    return
+  }
+
+  try {
+    const res = await fetch(`/api/orders/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+      body: JSON.stringify(buildPayload()),
+    })
+
+    const data = await parseResponsePayload(res)
+
+    if (!res.ok) {
+      const fromErrors =
+        typeof data.errors === 'object' && data.errors !== null
+          ? Object.values(data.errors)
+              .flat()
+              .filter(Boolean)
+              .join(' ')
+          : ''
+      message.value =
+        fromErrors ||
+        data.message ||
+        (data._raw ? `Помилка ${res.status}: ${data._raw}` : `Помилка ${res.status}`)
+      messageIsError.value = true
+      return
+    }
+
+    message.value = 'Збережено.'
+    messageIsError.value = false
+    applyFromOrder(data)
+    emit('saved', data)
+  } catch (err) {
+    const hint =
+      err instanceof TypeError && err.message === 'Failed to fetch'
+        ? ' Переконайся, що сервер запущений і сторінка з того ж хоста.'
+        : ''
+    message.value = `Не вдалося зберегти.${hint} ${err instanceof Error ? err.message : ''}`.trim()
+    messageIsError.value = true
+  } finally {
+    submitting.value = false
+  }
+}
 
 const onClose = () => {
   emit('close')
@@ -153,6 +261,26 @@ const onClose = () => {
         />
       </label>
     </div>
+
+    <div class="order-edit__actions">
+      <button
+        class="order-edit__submit"
+        type="button"
+        :disabled="submitting"
+        @click="submit"
+      >
+        {{ submitting ? 'Збереження…' : 'Зберегти' }}
+      </button>
+    </div>
+
+    <p
+      v-if="message"
+      class="order-edit__message"
+      :class="{ 'order-edit__message--error': messageIsError }"
+      role="status"
+    >
+      {{ message }}
+    </p>
   </section>
 </template>
 
@@ -263,5 +391,40 @@ const onClose = () => {
   outline: none;
   border-color: #94a3b8;
   background: #fff;
+}
+
+.order-edit__actions {
+  margin-top: 16px;
+}
+
+.order-edit__submit {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: #0f172a;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.order-edit__submit:hover:not(:disabled) {
+  background: #1e293b;
+}
+
+.order-edit__submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.order-edit__message {
+  margin: 12px 0 0;
+  font-size: 14px;
+  color: #166534;
+}
+
+.order-edit__message--error {
+  color: #991b1b;
 }
 </style>

@@ -32,6 +32,16 @@ const onOrderEditClose = () => {
   selectedOrder.value = null
 }
 
+const onOrderSaved = async (updated) => {
+  await loadOrders()
+  const id = updated?.id ?? selectedOrder.value?.id
+  if (id == null) {
+    return
+  }
+  const next = orders.value.find((o) => Number(o.id) === Number(id))
+  selectedOrder.value = next != null ? next : updated
+}
+
 const onMapIdle = () => {
   mapLoaded.value = true
 }
@@ -150,6 +160,7 @@ onMounted(() => {
           v-else
           :order="selectedOrder"
           @close="onOrderEditClose"
+          @saved="onOrderSaved"
         />
       </aside>
 
@@ -160,8 +171,10 @@ onMounted(() => {
             v-model:center="center"
             :api-key="apiKey"
             :zones="zones"
+            :orders="orders"
             :radius-meters="ORDER_MAP_RADIUS_M"
             :show-saved-zones="showSavedZones"
+            :show-saved-orders="showSavedZones"
             @idle="onMapIdle"
             @map-click="onMapPanelClick"
           />

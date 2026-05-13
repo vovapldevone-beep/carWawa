@@ -52,4 +52,50 @@ class OrderController extends Controller
 
         return response()->json($order, 201);
     }
+
+    public function update(Request $request, Order $order)
+    {
+        $validated = $request->validate([
+            'car_name' => 'required|string|max:255',
+            'car_number' => 'required|string|max:255',
+            'car_weight' => 'nullable|numeric|min:0',
+            'car_location' => 'required|string|max:255',
+            'loading_date' => 'nullable|date',
+            'distance' => 'nullable|numeric|min:0',
+            'status' => 'nullable|string|max:255',
+        ]);
+
+        $distance = null;
+        if (array_key_exists('distance', $validated) && $validated['distance'] !== null) {
+            $distance = (int) round((float) $validated['distance']);
+        }
+
+        $status = $validated['status'] ?? '';
+        $status = is_string($status) && $status !== '' ? $status : 'pending';
+
+        $order->update([
+            'car_name' => $validated['car_name'],
+            'car_number' => $validated['car_number'],
+            'car_weight' => $validated['car_weight'] ?? null,
+            'car_location' => $validated['car_location'],
+            'loading_date' => $validated['loading_date'] ?? null,
+            'distance' => $distance,
+            'status' => $status,
+        ]);
+
+        $order->refresh();
+
+        return response()->json(
+            $order->only([
+                'id',
+                'car_name',
+                'car_number',
+                'car_weight',
+                'car_location',
+                'loading_date',
+                'distance',
+                'status',
+            ]),
+        );
+    }
 }

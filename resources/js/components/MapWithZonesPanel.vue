@@ -2,6 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import { GoogleMap, Marker, Circle } from 'vue3-google-map'
 import MapSavedZones from './MapSavedZones.vue'
+import MapSavedOrders from './MapSavedOrders.vue'
 import ZoneInfoPanel from './ZoneInfoPanel.vue'
 
 const props = defineProps({
@@ -10,6 +11,10 @@ const props = defineProps({
     required: true,
   },
   zones: {
+    type: Array,
+    default: () => [],
+  },
+  orders: {
     type: Array,
     default: () => [],
   },
@@ -30,6 +35,10 @@ const props = defineProps({
     default: true,
   },
   showSavedZones: {
+    type: Boolean,
+    default: true,
+  },
+  showSavedOrders: {
     type: Boolean,
     default: true,
   },
@@ -166,6 +175,12 @@ watch(
         :zones="zones"
         :selected-zone-id="selectedZoneId"
         @select="onSavedZoneSelect"
+      />
+
+      <MapSavedOrders
+        v-if="showSavedOrders"
+        :orders="orders"
+        :api-key="apiKey"
       />
     </GoogleMap>
 
