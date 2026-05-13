@@ -1,4 +1,6 @@
 <script setup>
+import OrderComponent from './OrderComponent.vue'
+
 defineProps({
   orders: {
     type: Array,
@@ -14,41 +16,7 @@ defineProps({
   },
 })
 
-const formatWeight = (value) => {
-  if (value == null || value === '') {
-    return '—'
-  }
-  const n = Number(value)
-  return Number.isFinite(n) ? `${n} т` : String(value)
-}
-
-const formatDistance = (value) => {
-  if (value == null || value === '') {
-    return '—'
-  }
-  return `${value} км`
-}
-
-const formatLoadingDate = (value) => {
-  if (value == null || value === '') {
-    return '—'
-  }
-  const d = new Date(value)
-  if (Number.isNaN(d.getTime())) {
-    return String(value)
-  }
-  return new Intl.DateTimeFormat('uk-UA', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  }).format(d)
-}
-
-const formatStatus = (value) => {
-  if (value == null || value === '') {
-    return '—'
-  }
-  return String(value)
-}
+const emit = defineEmits(['select'])
 </script>
 
 <template>
@@ -71,43 +39,12 @@ const formatStatus = (value) => {
     </p>
 
     <ul v-else class="orders-list__items">
-      <li
+      <OrderComponent
         v-for="order in orders"
         :key="order.id"
-        class="orders-list__card"
-      >
-        <p class="orders-list__card-title">
-          {{ order.car_name || '—' }}
-        </p>
-        <dl class="orders-list__card-dl">
-          <div class="orders-list__card-row">
-            <dt>Номер авто</dt>
-            <dd>{{ order.car_number || '—' }}</dd>
-          </div>
-          <div class="orders-list__card-row">
-            <dt>Вага</dt>
-            <dd>{{ formatWeight(order.car_weight) }}</dd>
-          </div>
-          <div class="orders-list__card-row">
-            <dt>Дата завантаження</dt>
-            <dd>{{ formatLoadingDate(order.loading_date) }}</dd>
-          </div>
-          <div class="orders-list__card-row">
-            <dt>Локація</dt>
-            <dd>{{ order.car_location || '—' }}</dd>
-          </div>
-          <div class="orders-list__card-row">
-            <dt>Дистанція</dt>
-            <dd>{{ formatDistance(order.distance) }}</dd>
-          </div>
-          <div class="orders-list__card-row">
-            <dt>Статус</dt>
-            <dd class="orders-list__card-status">
-              {{ formatStatus(order.status) }}
-            </dd>
-          </div>
-        </dl>
-      </li>
+        :order="order"
+        @select="emit('select', $event)"
+      />
     </ul>
   </section>
 </template>
@@ -156,51 +93,5 @@ const formatStatus = (value) => {
   flex-direction: column;
   gap: 10px;
   min-height: 120px;
-}
-
-.orders-list__card {
-  margin: 0;
-  padding: 12px 14px;
-  border-radius: 0.75rem;
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
-}
-
-.orders-list__card-title {
-  margin: 0 0 8px;
-  font-size: 15px;
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.orders-list__card-dl {
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.orders-list__card-row {
-  display: grid;
-  grid-template-columns: minmax(0, 38%) 1fr;
-  gap: 8px 10px;
-  font-size: 13px;
-  line-height: 1.35;
-}
-
-.orders-list__card-row dt {
-  margin: 0;
-  font-weight: 600;
-  color: #64748b;
-}
-
-.orders-list__card-row dd {
-  margin: 0;
-  color: #0f172a;
-  word-break: break-word;
-}
-
-.orders-list__card-status {
-  text-transform: capitalize;
 }
 </style>

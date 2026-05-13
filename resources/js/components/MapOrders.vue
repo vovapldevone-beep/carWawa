@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import NawBarMenu from './NavBarMenu.vue'
 import OrderCreateForm from './OrderCreateForm.vue'
+import OrderEdit from './OrderEdit.vue'
 import OrdersList from './OrdersList.vue'
 import MapWithZonesPanel from './MapWithZonesPanel.vue'
 
@@ -20,6 +21,16 @@ const mapLoadError = ref('')
 const orders = ref([])
 const ordersLoading = ref(false)
 const ordersError = ref('')
+
+const selectedOrder = ref(null)
+
+const onOrderSelect = (order) => {
+  selectedOrder.value = order
+}
+
+const onOrderEditClose = () => {
+  selectedOrder.value = null
+}
 
 const onMapIdle = () => {
   mapLoaded.value = true
@@ -129,9 +140,16 @@ onMounted(() => {
         />
 
         <OrdersList
+          v-if="!selectedOrder"
           :orders="orders"
           :loading="ordersLoading"
           :error="ordersError"
+          @select="onOrderSelect"
+        />
+        <OrderEdit
+          v-else
+          :order="selectedOrder"
+          @close="onOrderEditClose"
         />
       </aside>
 
