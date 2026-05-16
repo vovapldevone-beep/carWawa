@@ -25,6 +25,14 @@ const carMarkerIcon = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
 </svg>
 `)}`
 
+const flagMarkerIcon = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
+<svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 38 38">
+  <circle cx="19" cy="19" r="18" fill="#37b782"/>
+  <path d="M13 28V10.8c0-.55.45-1 1-1s1 .45 1 1V28c0 .55-.45 1-1 1s-1-.45-1-1Z" fill="#fff"/>
+  <path d="M15 11.5h10.2c.75 0 1.18.86.73 1.46l-1.82 2.42 1.82 2.42c.45.6.02 1.46-.73 1.46H15V11.5Z" fill="#fff"/>
+</svg>
+`)}`
+
 const fetchGeocode = async (address) => {
   const query = String(address).trim()
   if (query.length < 2) {
@@ -114,6 +122,7 @@ watch(
             id: `${id}:${addressItem.type}`,
             position,
             title: `${prefix}: ${addr}`,
+            icon: addressItem.type === 'delivery' ? flagMarkerIcon : carMarkerIcon,
           })
         }
       }
@@ -134,7 +143,7 @@ watch(
     :options="{
       position: m.position,
       title: m.title,
-      icon: carMarkerIcon,
+      icon: m.icon,
       zIndex: 2,
     }"
   />
