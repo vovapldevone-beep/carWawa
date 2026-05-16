@@ -15,6 +15,16 @@ const props = defineProps({
 
 const markers = ref([])
 
+const carMarkerIcon = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
+<svg xmlns="http://www.w3.org/2000/svg" width="38" height="38" viewBox="0 0 38 38">
+  <circle cx="19" cy="19" r="18" fill="#2f7df6"/>
+  <path d="M9 22.5h2.15a3.15 3.15 0 0 0 6.15 0h3.4a3.15 3.15 0 0 0 6.15 0H29a1.6 1.6 0 0 0 1.6-1.6v-3.1c0-1.35-1.03-2.48-2.37-2.61l-2.63-.26-2.66-3.25A3.2 3.2 0 0 0 20.46 10h-6.62a3.2 3.2 0 0 0-2.88 1.81l-1.68 3.5A3.2 3.2 0 0 0 7 18.36v2.54a1.6 1.6 0 0 0 2 1.6Z" fill="#fff"/>
+  <path d="M12.05 14.8 13.1 12.6a1.1 1.1 0 0 1 .99-.62h2.5v2.82h-4.54Zm6.55 0v-2.82h1.64c.33 0 .65.15.86.41l1.97 2.41H18.6Z" fill="#2f7df6"/>
+  <circle cx="14.23" cy="22.5" r="1.65" fill="#2f7df6"/>
+  <circle cx="23.77" cy="22.5" r="1.65" fill="#2f7df6"/>
+</svg>
+`)}`
+
 const fetchGeocode = async (address) => {
   const query = String(address).trim()
   if (query.length < 2) {
@@ -124,6 +134,7 @@ watch(
     :options="{
       position: m.position,
       title: m.title,
+      icon: carMarkerIcon,
       zIndex: 2,
     }"
   />
