@@ -101,8 +101,9 @@ const carLocation = computed(() => {
   return getFirstFilledValue(props.order?.car_location, props.order?.location, '—')
 })
 
-const evacuatorLocation = computed(() => {
+const deliveryAddress = computed(() => {
   return getFirstFilledValue(
+    props.order?.delivery_address,
     props.order?.evacuator_location,
     props.order?.evacuation_location,
     props.order?.destination,
@@ -176,7 +177,7 @@ const onKeydown = (event) => {
             <span class="order-component__pin" aria-hidden="true"></span>
             <div class="order-component__location-text">
               <span class="order-component__label">Адреса доставки</span>
-              <span class="order-component__value">{{ evacuatorLocation }}</span>
+              <span class="order-component__value">{{ deliveryAddress }}</span>
             </div>
           </div>
         </div>

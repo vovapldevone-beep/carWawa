@@ -65,25 +65,47 @@ watch(
           return
         }
         const id = order?.id
-        const addr = order?.car_location
-        if (id == null || addr == null || String(addr).trim() === '') {
+        if (id == null) {
           continue
         }
-        const position = await resolvePosition(addr)
-        if (myRun !== runId) {
-          return
-        }
-        if (!position) {
-          continue
-        }
-        const label = String(addr).trim()
+
         const name = order.car_name != null ? String(order.car_name).trim() : ''
-        const title = name !== '' ? `${name} — ${label}` : label
-        nextMarkers.push({
-          id,
-          position,
-          title,
-        })
+        const addresses = [
+          {
+            type: 'car',
+            label: 'Локація авто',
+            address: order?.car_location,
+          },
+          {
+            type: 'delivery',
+            label: 'Адреса доставки',
+            address: order?.delivery_address,
+          },
+        ]
+        const usedAddresses = new Set()
+
+        for (const addressItem of addresses) {
+          const addr = String(addressItem.address ?? '').trim()
+          if (addr === '' || usedAddresses.has(addr)) {
+            continue
+          }
+          usedAddresses.add(addr)
+
+          const position = await resolvePosition(addr)
+          if (myRun !== runId) {
+            return
+          }
+          if (!position) {
+            continue
+          }
+
+          const prefix = name !== '' ? `${name} — ${addressItem.label}` : addressItem.label
+          nextMarkers.push({
+            id: `${id}:${addressItem.type}`,
+            position,
+            title: `${prefix}: ${addr}`,
+          })
+        }
       }
       if (myRun !== runId) {
         return

@@ -18,15 +18,17 @@ const carName = ref('')
 const carNumber = ref('')
 const carWeight = ref('')
 const loadingDate = ref('')
+const deliveryAddress = ref('')
 
 const submitting = ref(false)
 const message = ref('')
 const messageIsError = ref(false)
 
 let debounceTimer = null
+let deliveryAddressDebounceTimer = null
 let geocodeRequestId = 0
 
-const geocodeFromText = async (text) => {
+const geocodeFromText = async (text, target) => {
   const query = String(text).trim()
   if (query.length < 3) {
     return
@@ -44,7 +46,7 @@ const geocodeFromText = async (text) => {
     }
     if (data.results?.length) {
       center.value = data.results[0].geometry.location
-      carLocation.value = data.results[0].formatted_address
+      target.value = data.results[0].formatted_address
     }
   } catch {
     /* ignore */
@@ -58,13 +60,29 @@ watch(carLocation, (val) => {
     return
   }
   debounceTimer = window.setTimeout(() => {
-    geocodeFromText(t)
+    geocodeFromText(t, carLocation)
+  }, 550)
+})
+
+watch(deliveryAddress, (val) => {
+  window.clearTimeout(deliveryAddressDebounceTimer)
+  const t = String(val ?? '').trim()
+  if (t.length < 4) {
+    return
+  }
+  deliveryAddressDebounceTimer = window.setTimeout(() => {
+    geocodeFromText(t, deliveryAddress)
   }, 550)
 })
 
 const onLocationFindClick = () => {
   window.clearTimeout(debounceTimer)
-  geocodeFromText(carLocation.value)
+  geocodeFromText(carLocation.value, carLocation)
+}
+
+const onDeliveryAddressFindClick = () => {
+  window.clearTimeout(deliveryAddressDebounceTimer)
+  geocodeFromText(deliveryAddress.value, deliveryAddress)
 }
 
 const toggleShowSavedZones = () => {
@@ -76,6 +94,7 @@ const resetForm = () => {
   carNumber.value = ''
   carWeight.value = ''
   carLocation.value = ''
+  deliveryAddress.value = ''
   loadingDate.value = ''
 }
 
@@ -100,7 +119,7 @@ const submit = async () => {
       car_name: carName.value.trim(),
       car_number: carNumber.value.trim(),
       car_location: carLocation.value.trim(),
-      delivery_address: delivery_address.value.trim(),
+      delivery_address: deliveryAddress.value.trim(),
     }
 
     const w = String(carWeight.value ?? '').trim()
@@ -251,16 +270,16 @@ const submit = async () => {
             </svg>
           </span>
           <input
-            v-model="carLocation"
+            v-model="deliveryAddress"
             type="text"
             class="order-form__location-input"
-            name="car_location"
+            name="delivery_address"
             placeholder="Київ, вул. Хрещатик, 1"
             autocomplete="street-address"
             required
-            @keydown.enter.prevent="onLocationFindClick"
+            @keydown.enter.prevent="onDeliveryAddressFindClick"
           />
-          <button type="button" class="order-form__btn-find" @click="onLocationFindClick">
+          <button type="button" class="order-form__btn-find" @click="onDeliveryAddressFindClick">
             Знайти
           </button>
         </div>

@@ -18,6 +18,7 @@ class Order extends Model
         'car_number',
         'car_weight',
         'car_location',
+        'delivery_address',
         'status',
         'loading_date',
         'distance',

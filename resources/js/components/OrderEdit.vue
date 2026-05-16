@@ -15,6 +15,7 @@ const carNumber = ref('')
 const carWeight = ref('')
 const loadingDate = ref('')
 const carLocation = ref('')
+const deliveryAddress = ref('')
 const distance = ref('')
 const status = ref('')
 
@@ -39,6 +40,8 @@ const applyFromOrder = (order) => {
   loadingDate.value = loadingDateToInput(order.loading_date)
   carLocation.value =
     order.car_location != null ? String(order.car_location) : ''
+  deliveryAddress.value =
+    order.delivery_address != null ? String(order.delivery_address) : ''
   distance.value =
     order.distance != null && order.distance !== ''
       ? String(order.distance)
@@ -75,6 +78,7 @@ const buildPayload = () => {
     car_name: carName.value.trim(),
     car_number: carNumber.value.trim(),
     car_location: carLocation.value.trim(),
+    delivery_address: deliveryAddress.value.trim(),
     status: status.value.trim() === '' ? null : status.value.trim(),
   }
 
@@ -230,12 +234,23 @@ const onClose = () => {
       </label>
 
       <label class="order-edit__field order-edit__field--wide">
-        <span class="order-edit__label">Локація</span>
+        <span class="order-edit__label">Локація авто</span>
         <input
           v-model="carLocation"
           class="order-edit__input"
           type="text"
           name="car_location"
+          autocomplete="street-address"
+        />
+      </label>
+
+      <label class="order-edit__field order-edit__field--wide">
+        <span class="order-edit__label">Адреса доставки</span>
+        <input
+          v-model="deliveryAddress"
+          class="order-edit__input"
+          type="text"
+          name="delivery_address"
           autocomplete="street-address"
         />
       </label>
