@@ -100,6 +100,7 @@ const submit = async () => {
       car_name: carName.value.trim(),
       car_number: carNumber.value.trim(),
       car_location: carLocation.value.trim(),
+      delivery_address: delivery_address.value.trim(),
     }
 
     const w = String(carWeight.value ?? '').trim()
@@ -217,6 +218,31 @@ const submit = async () => {
 
       <div class="order-form__field order-form__field--wide">
         <span class="order-form__label order-form__label--caps">Локація авто</span>
+        <div class="order-form__location">
+          <span class="order-form__pin" aria-hidden="true">
+            <svg class="order-form__pin-svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+            </svg>
+          </span>
+          <input
+            v-model="carLocation"
+            type="text"
+            class="order-form__location-input"
+            name="car_location"
+            placeholder="Київ, вул. Хрещатик, 1"
+            autocomplete="street-address"
+            required
+            @keydown.enter.prevent="onLocationFindClick"
+          />
+          <button type="button" class="order-form__btn-find" @click="onLocationFindClick">
+            Знайти
+          </button>
+        </div>
+      </div>
+
+      <div class="order-form__field order-form__field--wide">
+        <span class="order-form__label order-form__label--caps">Адреса доставки</span>
         <div class="order-form__location">
           <span class="order-form__pin" aria-hidden="true">
             <svg class="order-form__pin-svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
