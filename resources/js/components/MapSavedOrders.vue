@@ -11,6 +11,14 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  selectedOrderId: {
+    type: [Number, String],
+    default: null,
+  },
+})
+
+const emit = defineEmits({
+  select: (order) => order != null && typeof order === 'object',
 })
 
 const markers = ref([])
@@ -61,11 +69,11 @@ const fetchGeocode = async (address) => {
 let runId = 0
 
 watch(
-  () => props.orders,
-  (orders) => {
+  () => [props.orders, props.selectedOrderId],
+  ([orderList, selectedOrderId]) => {
     const myRun = ++runId
     ;(async () => {
-      const list = Array.isArray(orders) ? orders : []
+      const list = Array.isArray(orderList) ? orderList : []
       const addressPromiseCache = new Map()
       const resolvePosition = (address) => {
         const key = String(address).trim()
@@ -88,18 +96,22 @@ watch(
         }
 
         const name = order.car_name != null ? String(order.car_name).trim() : ''
+        const isSelectedOrder =
+          selectedOrderId != null && String(selectedOrderId) === String(id)
         const addresses = [
           {
             type: 'car',
             label: 'Локація авто',
             address: order?.car_location,
           },
-          {
+        ]
+        if (isSelectedOrder) {
+          addresses.push({
             type: 'delivery',
             label: 'Адреса доставки',
             address: order?.delivery_address,
-          },
-        ]
+          })
+        }
         const usedAddresses = new Set()
 
         for (const addressItem of addresses) {
@@ -120,6 +132,8 @@ watch(
           const prefix = name !== '' ? `${name} — ${addressItem.label}` : addressItem.label
           nextMarkers.push({
             id: `${id}:${addressItem.type}`,
+            type: addressItem.type,
+            order,
             position,
             title: `${prefix}: ${addr}`,
             icon: addressItem.type === 'delivery' ? flagMarkerIcon : carMarkerIcon,
@@ -146,5 +160,6 @@ watch(
       icon: m.icon,
       zIndex: 2,
     }"
+    @click="m.type === 'car' ? emit('select', m.order) : null"
   />
 </template>

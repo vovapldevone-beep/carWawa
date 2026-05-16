@@ -42,6 +42,10 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  selectedOrderId: {
+    type: [Number, String],
+    default: null,
+  },
 })
 
 const center = defineModel('center', {
@@ -54,6 +58,7 @@ const emit = defineEmits({
     payload != null &&
     typeof payload.lat === 'number' &&
     typeof payload.lng === 'number',
+  'order-select': (order) => order != null && typeof order === 'object',
   idle: () => true,
 })
 
@@ -181,6 +186,8 @@ watch(
         v-if="showSavedOrders"
         :orders="orders"
         :api-key="apiKey"
+        :selected-order-id="selectedOrderId"
+        @select="emit('order-select', $event)"
       />
     </GoogleMap>
 

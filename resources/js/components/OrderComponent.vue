@@ -101,18 +101,6 @@ const carLocation = computed(() => {
   return getFirstFilledValue(props.order?.car_location, props.order?.location, '—')
 })
 
-const deliveryAddress = computed(() => {
-  return getFirstFilledValue(
-    props.order?.delivery_address,
-    props.order?.evacuator_location,
-    props.order?.evacuation_location,
-    props.order?.destination,
-    props.order?.dropoff_location,
-    props.order?.to_location,
-    '—'
-  )
-})
-
 const onSelect = () => {
   emit('select', props.order)
 }
@@ -173,13 +161,6 @@ const onKeydown = (event) => {
             </div>
           </div>
 
-          <div class="order-component__location-row order-component__location-row--evacuator">
-            <span class="order-component__pin" aria-hidden="true"></span>
-            <div class="order-component__location-text">
-              <span class="order-component__label">Адреса доставки</span>
-              <span class="order-component__value">{{ deliveryAddress }}</span>
-            </div>
-          </div>
         </div>
       </div>
     </div>

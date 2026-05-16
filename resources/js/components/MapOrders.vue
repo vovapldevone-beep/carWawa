@@ -172,11 +172,13 @@ onMounted(() => {
             :api-key="apiKey"
             :zones="zones"
             :orders="orders"
+            :selected-order-id="selectedOrder?.id ?? null"
             :radius-meters="ORDER_MAP_RADIUS_M"
             :show-saved-zones="showSavedZones"
             :show-saved-orders="showSavedZones"
             @idle="onMapIdle"
             @map-click="onMapPanelClick"
+            @order-select="onOrderSelect"
           />
 
           <p v-if="mapLoadError" class="orders-map__error" role="alert">
