@@ -26,6 +26,7 @@ const selectedOrder = ref(null)
 
 const onOrderSelect = (order) => {
   selectedOrder.value = order
+  showSavedZones.value = false
 }
 
 const onOrderEditClose = () => {
@@ -175,7 +176,7 @@ onMounted(() => {
             :selected-order-id="selectedOrder?.id ?? null"
             :radius-meters="ORDER_MAP_RADIUS_M"
             :show-saved-zones="showSavedZones"
-            :show-saved-orders="showSavedZones"
+            :show-saved-orders="showSavedZones || selectedOrder != null"
             @idle="onMapIdle"
             @map-click="onMapPanelClick"
             @order-select="onOrderSelect"

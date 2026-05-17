@@ -95,6 +95,10 @@ watch(
           continue
         }
 
+        if (selectedOrderId != null && String(selectedOrderId) !== String(id)) {
+          continue
+        }
+
         const name = order.car_name != null ? String(order.car_name).trim() : ''
         const isSelectedOrder =
           selectedOrderId != null && String(selectedOrderId) === String(id)
