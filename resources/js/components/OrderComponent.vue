@@ -160,8 +160,16 @@ const onKeydown = (event) => {
               <span class="order-component__value">{{ carLocation }}</span>
             </div>
           </div>
-
         </div>
+
+        <div class="order-component__location-row order-component__location-row--evacuator">
+            <span class="order-component__pin" aria-hidden="true"></span>
+            <div class="order-component__location-text">
+              <span class="order-component__label">Адреса доставки</span>
+              <span class="order-component__value">{{ deliveryAddress }}</span>
+            </div>
+        </div>
+        
       </div>
     </div>
 
