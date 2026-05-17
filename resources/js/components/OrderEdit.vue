@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 const props = defineProps({
   order: {
@@ -18,6 +18,55 @@ const carLocation = ref('')
 const deliveryAddress = ref('')
 const distance = ref('')
 const status = ref('')
+
+const statusOptions = [
+  {
+    value: 'pending',
+    label: 'Очікує',
+  },
+  {
+    value: 'in_progress',
+    label: 'В роботі',
+  },
+  {
+    value: 'transporting',
+    label: 'Перевозиться',
+  },
+  {
+    value: 'delivered',
+    label: 'Перевезений',
+  },
+  {
+    value: 'cancelled',
+    label: 'Скасований',
+  },
+]
+
+const availableStatusOptions = computed(() => {
+  const currentStatus = status.value.trim()
+  if (
+    currentStatus === '' ||
+    statusOptions.some((option) => option.value === currentStatus)
+  ) {
+    return statusOptions
+  }
+
+  return [
+    ...statusOptions,
+    {
+      value: currentStatus,
+      label: currentStatus,
+    },
+  ]
+})
+
+const statusClass = computed(() => {
+  const value = status.value.trim()
+  if (value === '') {
+    return 'order-edit__input--status-empty'
+  }
+  return `order-edit__input--status-${value.replace(/[^a-z0-9_-]/gi, '-').toLowerCase()}`
+})
 
 const loadingDateToInput = (value) => {
   if (value == null || value === '') {
@@ -268,12 +317,20 @@ const onClose = () => {
 
       <label class="order-edit__field">
         <span class="order-edit__label">Статус</span>
-        <input
+        <select
           v-model="status"
           class="order-edit__input"
-          type="text"
+          :class="statusClass"
           name="status"
-        />
+        >
+          <option
+            v-for="option in availableStatusOptions"
+            :key="option.value"
+            :value="option.value"
+          >
+            {{ option.label }}
+          </option>
+        </select>
       </label>
     </div>
 
@@ -406,6 +463,42 @@ const onClose = () => {
   outline: none;
   border-color: #94a3b8;
   background: #fff;
+}
+
+.order-edit__input--status-empty {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  color: #475569;
+}
+
+.order-edit__input--status-pending {
+  border-color: #fde68a;
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.order-edit__input--status-in_progress {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.order-edit__input--status-transporting {
+  border-color: #c4b5fd;
+  background: #f5f3ff;
+  color: #6d28d9;
+}
+
+.order-edit__input--status-delivered {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.order-edit__input--status-cancelled {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
 }
 
 .order-edit__actions {

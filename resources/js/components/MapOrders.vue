@@ -31,6 +31,7 @@ const onOrderSelect = (order) => {
 
 const onOrderEditClose = () => {
   selectedOrder.value = null
+  showSavedZones.value = true
 }
 
 const onOrderSaved = async (updated) => {
